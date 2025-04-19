@@ -4,7 +4,8 @@
 # mhtexp2r
 
 An R implementation of the `mhtexp2` multiple hypothesis testing procedure for experimental economics, replicating the Stata version developed in John List’s lab.
-## 🧠 Package Pipeline (Execution Flow)
+
+## Package Pipeline (Execution Flow)
 
 The `mhtexp2r()` function performs subgroup-aware multiple hypothesis testing with bootstrap-based inference. It reproduces the behavior of the original Stata program line-for-line. Below is a detailed walkthrough of how the pipeline works, with each function labeled by the file it comes from.
 
