@@ -133,6 +133,22 @@ results <- mhtexp2_r(
 
 head(results)
 ```
+## Direct Replicability Testing
+
+For researchers who want to ensure exact replicability between the Stata implementation and the R package, we provide a Stata script to generate bootstrap outputs that can be directly compared with the R implementation.
+
+### Steps for Replication Testing:
+
+1. **Run the Stata Export Script**:
+   - Install the original Stata mhtexp2 command
+   - Run `export_bootstrap.do` to generate CSV files with bootstrap outputs
+   - This will create four files: `abregact.csv`, `abregboot.csv`, `pact.csv`, and `pboot.csv`
+
+2. **Test the R Implementation**:
+   - Place the CSV files in your R working directory
+   - Run the R test script:
+   ```r
+   source("test_replication.R")
 
 ##  Project Structure
 
