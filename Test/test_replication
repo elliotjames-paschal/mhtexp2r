@@ -1,0 +1,150 @@
+# Load required packages
+library(tidyr)
+library(dplyr)
+
+# Function to convert CSV to array
+csv_to_array <- function(file_path, has_bootstrap = FALSE) {
+  # Read the CSV
+  data <- read.csv(file_path)
+
+  if (has_bootstrap) {
+    # 4D array with bootstrap
+    dims <- c(
+      max(data$l),  # Bootstrap samples
+      max(data$i),  # Outcomes
+      max(data$j),  # Subgroups
+      max(data$k)   # Comparisons
+    )
+
+    # Create empty array
+    result <- array(NA, dim = dims)
+
+    # Fill the array
+    for (row in 1:nrow(data)) {
+      l <- data$l[row]
+      i <- data$i[row]
+      j <- data$j[row]
+      k <- data$k[row]
+      result[l, i, j, k] <- data$value[row]
+    }
+  } else {
+    # 3D array without bootstrap
+    dims <- c(
+      max(data$i),  # Outcomes
+      max(data$j),  # Subgroups
+      max(data$k)   # Comparisons
+    )
+
+    # Create empty array
+    result <- array(NA, dim = dims)
+
+    # Fill the array
+    for (row in 1:nrow(data)) {
+      i <- data$i[row]
+      j <- data$j[row]
+      k <- data$k[row]
+      result[i, j, k] <- data$value[row]
+    }
+  }
+
+  return(result)
+}
+
+# Load the data
+abregact <- csv_to_array(abregact.csv)
+abregboot <- csv_to_array(abregboot.csv, has_bootstrap = TRUE)
+pact <- csv_to_array(pact.csv)
+pboot <- csv_to_array(pboot.csv, has_bootstrap = TRUE)
+
+# Create combo matrix (for calculate_alphamulm)
+combo <- matrix(c(0, 1, 0, 2, 1, 2), nrow = 3, byrow = TRUE)
+
+# Create outcome_ids and subgroup_ids
+outcome_ids <- rep(1:2, each = 6)  # 1,1,1,1,1,1,2,2,2,2,2,2
+subgroup_ids <- rep(rep(1:2, each = 3), 2)  # 1,1,1,2,2,2,1,1,1,2,2,2
+
+# Run calculations
+pvals_calculated <- calculate_pvals(abregact, abregboot)
+alphasin_calculated <- calculate_alphasin(pact, pboot)
+alphamul_calculated <- calculate_alphamul(pact, pboot, alphasin_calculated)
+alphamulm_calculated <- calculate_alphamulm(
+  pact,
+  pboot,
+  combo,
+  outcome_ids,
+  subgroup_ids,
+  transitivity_check = TRUE
+)
+
+# Calculate Bonferroni and Holm corrections
+# Get the total number of hypotheses
+num_outcomes <- dim(alphasin_calculated)[1]
+num_subgroups <- dim(alphasin_calculated)[2]
+num_comparisons <- dim(alphasin_calculated)[3]
+num_hypotheses <- num_outcomes * num_subgroups * num_comparisons
+
+# Flatten alphasin for Bonferroni and Holm calculations
+alphasin_flat <- as.vector(alphasin_calculated)
+
+# Bonferroni correction
+bonf_flat <- pmin(1, alphasin_flat * num_hypotheses)
+
+# Holm correction
+# Holm correction - corrected implementation
+# Sort the p-values (ascending order)
+o <- order(alphasin_flat)
+alphasin_sorted <- alphasin_flat[o]
+
+# Holm correction
+# Sort the p-values
+print(alphasin_flat)
+o <- order(alphasin_flat)
+print(o)
+alphasin_sorted <- alphasin_flat[o]
+print(alphasin_sorted)
+
+# Apply the Holm adjustment
+holm_adjust <- alphasin_sorted * rev(seq_len(num_hypotheses))
+holm_adjust <- pmin(cummax(holm_adjust), 1)
+
+# Return to original order
+holm_flat <- numeric(num_hypotheses)
+holm_flat[o] <- holm_adjust
+
+# Reshape into original array dimensions
+bonf_calculated <- array(bonf_flat, dim = dim(alphasin_calculated))
+holm_calculated <- array(holm_flat, dim = dim(alphasin_calculated))
+
+# Create a tidy data frame with all results for easier comparison
+indices <- expand.grid(
+  outcome = 1:num_outcomes,
+  subgroup = 1:num_subgroups,
+  comparison = 1:num_comparisons
+)
+
+# Add treatment-control pairs for reference
+comparison_to_combo <- function(comp_idx) {
+  t1 <- combo[comp_idx, 1]
+  t2 <- combo[comp_idx, 2]
+  return(c(t1, t2))
+}
+
+treatment_pairs <- t(sapply(indices$comparison, comparison_to_combo))
+colnames(treatment_pairs) <- c("t1", "t2")
+
+# Combine everything into a clean data frame
+results_df <- cbind(
+  indices,
+  treatment_pairs,
+  data.frame(
+    coefficient = as.vector(abregact),
+    Remark3_2 = as.vector(alphasin_calculated),
+    Thm3_1 = as.vector(alphamul_calculated),
+    Remark3_8 = as.vector(alphamulm_calculated),
+    Bonf = as.vector(bonf_calculated),
+    Holm = as.vector(holm_calculated)
+  )
+)
+
+cat("\nTidy results for comparison:\n")
+print(results_df, digits = 4)
