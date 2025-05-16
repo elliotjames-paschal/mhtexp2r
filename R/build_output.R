@@ -1,38 +1,58 @@
-#' Format final output from mhtexp2_r
-#'
-#' @param observed 3D array of observed stats (outcome x subgroup x comparison)
-#' @param combo Matrix of treatment-control pairs
-#' @param alpha_sin Matrix of single-hypothesis thresholds
-#' @param alpha_mul Matrix of multiple-testing corrected thresholds
-#' @param pvals Matrix of p-values
-#' @param alpha_mulm Matrix of transitivity-corrected thresholds
-#'
-#' @return A long-format data.frame of test results
-#' @export
-build_output <- function(observed, combo, alpha_sin, alpha_mul, pvals, alpha_mulm) {
-  dims <- dim(observed)
+{
+
+  dims <- dim(stat)
   num_outcomes <- dims[1]
   num_subgroups <- dims[2]
   num_comparisons <- dims[3]
 
-  # Create flat index
+  # Preserve original row order
   out <- expand.grid(
     outcome = seq_len(num_outcomes),
     subgroup = seq_len(num_subgroups),
     comparison = seq_len(num_comparisons)
   )
 
-  # Add stats
-  out$stat <- as.vector(observed)
-  out$pval <- as.vector(pvals)
-  out$alpha_sin <- as.vector(alpha_sin)
-  out$alpha_mul <- as.vector(alpha_mul)
-  out$alpha_mulm <- as.vector(alpha_mulm)
+  # Add results
+  out$coefficient <- as.vector(coef)
+  out$test_stat   <- as.vector(stat)
+  out$Remark3_2   <- as.vector(alpha_sin)
+  out$Thm3_1      <- as.vector(alpha_mul)
+  out$Remark3_8   <- as.vector(alpha_mulm)
+
+  # Add Bonferroni and Holm (based on single-test p-values)
+  pvec <- out$Remark3_2
+  nh <- length(pvec)
+
+  # Bonferroni correction
+  out$Bonf <- pmin(1, pvec * nh)
+  # Bonferroni correction
+  bonf_flat <- pmin(1, alphasin_flat * num_hypotheses)
+
+  # Holm correction
+  out$Holm <- {
+    o <- order(pvec)
+    pvec_sorted <- pvec[o]
+
+    # Holm adjustment
+    holm_adjust <- pvec_sorted * rev(seq_len(nh))
+    holm_adjust <- pmin(cummax(holm_adjust), 1)
+
+    result <- numeric(nh)
+    result[o] <- holm_adjust
+    result
+  }
 
   # Add treatment-control pairs
   combo_rep <- combo[rep(seq_len(nrow(combo)), each = num_outcomes * num_subgroups), ]
   out$t1 <- combo_rep[, 1]
   out$t2 <- combo_rep[, 2]
+
+  # Final formatting
+  out$comparison <- NULL  # Remove unneeded column
+
+  out <- out[, c("outcome", "subgroup", "t1", "t2",
+                 "coefficient", "Remark3_2", "Thm3_1", "Remark3_8",
+                 "Bonf", "Holm")]
 
   return(out)
 }
