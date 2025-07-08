@@ -96,10 +96,6 @@ View(result$comparison)
 
 List, J. A., Shaikh, A. M., & Vayalinkal, J. P. (2019). Multiple Testing with Covariate Adjustment in Experimental Economics. *Journal of Econometrics*, forthcoming.
 
-## License
-
-MIT License. See [LICENSE](LICENSE) file for details.
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
