@@ -6,15 +6,27 @@
 #' @return 3D array of p-values (same shape as observed)
 #' @export
 calculate_pvals <- function(observed, boot) {
+
   B <- dim(boot)[1]
   out <- array(NA, dim = dim(observed))
 
   for (i in seq_len(dim(observed)[1])) {
     for (j in seq_len(dim(observed)[2])) {
       for (k in seq_len(dim(observed)[3])) {
-        stat_obs <- observed[i, j, k]
-        stat_boot <- boot[, i, j, k]
-        out[i, j, k] <- mean(stat_boot >= stat_obs)
+
+        # Get observed test statistic for this hypothesis
+        observed_stat <- observed[i, j, k]
+
+        # Get all bootstrap statistics for this hypothesis
+        bootstrap_stats <- boot[, i, j, k]
+
+        # Count how many bootstrap stats >= observed stat
+        exceed_count <- sum(bootstrap_stats >= observed_stat)
+
+        # Calculate 1 - p-value (matching Stata exactly)
+        one_minus_p <- 1 - (exceed_count / B)
+
+        out[i, j, k] <- one_minus_p
       }
     }
   }
@@ -22,26 +34,46 @@ calculate_pvals <- function(observed, boot) {
   return(out)
 }
 
+
 #' Calculate single hypothesis adjusted thresholds (Remark 3.2)
 #'
-#' @param observed 3D array (outcomes x subgroups x comparisons)
-#' @param boot 4D array (B x outcomes x subgroups x comparisons)
+#' @param pact 3D array (outcomes x subgroups x comparisons) - observed "1-p" values
+#' @param pboot 4D array (B x outcomes x subgroups x comparisons) - bootstrap "1-p" values
 #'
 #' @return 3D array of adjusted alpha thresholds (same shape)
 #' @export
-calculate_alphasin <- function(observed, boot) {
-  B <- dim(boot)[1]
-  out <- array(NA, dim = dim(observed))
+calculate_alphasin <- function(pact, pboot) {
 
-  for (i in seq_len(dim(observed)[1])) {
-    for (j in seq_len(dim(observed)[2])) {
-      for (k in seq_len(dim(observed)[3])) {
-        obs_stat <- observed[i, j, k]
-        boot_stats <- boot[, i, j, k]
-        sorted_boot <- sort(boot_stats, decreasing = TRUE)
-        v <- obs_stat >= sorted_boot
+  B <- dim(pboot)[1]
+  out <- array(NA, dim = dim(pact))
+
+  for (i in seq_len(dim(pact)[1])) {
+    for (j in seq_len(dim(pact)[2])) {
+      for (k in seq_len(dim(pact)[3])) {
+
+        # Get observed "1-p" value for this hypothesis
+        observed_1p <- pact[i, j, k]
+
+        # Get bootstrap "1-p" values for this hypothesis
+        boot_1p <- pboot[, i, j, k]
+
+        # Sort bootstrap values in descending order (largest first)
+        sorted_boot <- sort(boot_1p, decreasing = TRUE)
+
+        # Find where observed value is >= sorted bootstrap values
+        v <- observed_1p >= sorted_boot
+
+        # Find first TRUE index (where observed >= bootstrap)
         first_idx <- which(v)[1]
-        out[i, j, k] <- if (is.na(first_idx)) 1 else first_idx / B
+
+        # Calculate proportion
+        if (is.na(first_idx)) {
+          q <- 1
+        } else {
+          q <- first_idx / B
+        }
+
+        out[i, j, k] <- q
       }
     }
   }
