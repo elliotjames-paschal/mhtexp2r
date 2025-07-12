@@ -73,7 +73,6 @@ Use `validate_package.R` to run both implementations side-by-side:
 
 ```r
 # Load and run validation
-source("tests/testthat/validate_package.R")
 result <- validate_mhtexp2()
 
 # View detailed comparison
