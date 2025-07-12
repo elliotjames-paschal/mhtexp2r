@@ -103,6 +103,7 @@ find_stata()  # Returns path to detected Stata executable
 
 **Requirements:**
 - Stata installation (any recent version)
+- Stata mhtexp2 package installed
 - Data must include columns: `y1`, `y2`, `treat`, `x1`, `x2`, `subgroup`
 
 **Note:** If Stata auto-detection fails, manually specify the path with `stata_path = "/path/to/your/stata"`.
