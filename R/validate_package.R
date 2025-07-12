@@ -6,6 +6,56 @@
 
 # Required packages loaded via DESCRIPTION
 
+#' Find Stata executable automatically
+#' @export
+find_stata <- function() {
+  # Common Stata locations on different systems (newest versions first)
+  possible_paths <- c(
+    # macOS locations - Stata 19 first
+    "/Applications/Stata/Stata19.app/Contents/MacOS/stata-mp",
+    "/Applications/Stata/Stata19.app/Contents/MacOS/stata-se", 
+    "/Applications/Stata/Stata19.app/Contents/MacOS/stata-ic",
+    "/Applications/StataNow/Stata19.app/Contents/MacOS/stata-mp",
+    "/Applications/StataNow/Stata19.app/Contents/MacOS/stata-se",
+    "/Applications/StataNow/Stata19.app/Contents/MacOS/stata-ic",
+    # macOS Stata 18, 17, 16
+    "/Applications/Stata/StataMP.app/Contents/MacOS/stata-mp",
+    "/Applications/Stata/StataSE.app/Contents/MacOS/stata-se", 
+    "/Applications/Stata/StataIC.app/Contents/MacOS/stata-ic",
+    "/Applications/StataNow/StataMP.app/Contents/MacOS/stata-mp",
+    "/Applications/StataNow/StataSE.app/Contents/MacOS/stata-se",
+    "/Applications/StataNow/StataIC.app/Contents/MacOS/stata-ic",
+    # Windows locations
+    "C:/Program Files/Stata19/StataMP-64.exe",
+    "C:/Program Files/Stata18/StataMP-64.exe",
+    "C:/Program Files/Stata17/StataMP-64.exe",
+    "C:/Program Files/Stata16/StataMP-64.exe", 
+    "C:/Program Files/Stata15/StataMP-64.exe",
+    # Linux locations
+    "/usr/local/stata19/stata-mp",
+    "/usr/local/stata18/stata-mp",
+    "/usr/local/stata17/stata-mp",
+    "/usr/local/stata16/stata-mp",
+    "/usr/local/stata15/stata-mp"
+  )
+  
+  # Check if stata is in PATH
+  stata_in_path <- Sys.which("stata")
+  if (stata_in_path != "") {
+    return(stata_in_path)
+  }
+  
+  # Check common installation paths
+  for (path in possible_paths) {
+    if (file.exists(path)) {
+      return(path)
+    }
+  }
+  
+  # If not found, return NULL
+  return(NULL)
+}
+
 #' Main validation function
 #' 
 #' @export
@@ -21,14 +71,23 @@
 validate_mhtexp2 <- function(data_source = "generate",
                             n_obs = 1000,
                             combo = "pairwise", 
-                            bootstrap = 1000,
+                            bootstrap = 5000,
                             studentized = TRUE,
                             transitivity_check = TRUE,
-                            seed = 42,
-                            stata_path = "/Applications/StataNow/StataMP.app/Contents/MacOS/stata-mp",
+                            seed = NULL,
+                            stata_path = NULL,
                             verbose = TRUE) {
   
   if (verbose) cat("=== MHTEXP2 R vs STATA VALIDATION ===\n\n")
+  
+  # Auto-detect Stata if path not provided
+  if (is.null(stata_path)) {
+    stata_path <- find_stata()
+    if (is.null(stata_path)) {
+      stop("Stata not found. Please install Stata or provide stata_path parameter.")
+    }
+    if (verbose) cat("Found Stata at:", stata_path, "\n")
+  }
   
   # Set seed for reproducibility
   if (!is.null(seed)) {

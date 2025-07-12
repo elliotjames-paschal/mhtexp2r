@@ -2,7 +2,7 @@
 % Please edit documentation in R/validate_package.R
 \name{validate_mhtexp2}
 \alias{validate_mhtexp2}
-\title{Validation Script: R vs Stata Comparison}
+\title{Main validation function}
 \usage{
 validate_mhtexp2(
   data_source = "generate",
@@ -11,8 +11,8 @@ validate_mhtexp2(
   bootstrap = 1000,
   studentized = TRUE,
   transitivity_check = TRUE,
-  seed = 42,
-  stata_path = "/Applications/StataNow/StataMP.app/Contents/MacOS/stata-mp",
+  seed = NULL,
+  stata_path = NULL,
   verbose = TRUE
 )
 }
@@ -36,7 +36,5 @@ validate_mhtexp2(
 \item{verbose}{Whether to print detailed output}
 }
 \description{
-This script runs both R and Stata implementations of mhtexp2 and compares results.
-Supports both generated test data and user-provided datasets.
 Main validation function
 }
