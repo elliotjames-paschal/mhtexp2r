@@ -63,53 +63,51 @@ The main output is a data frame with the following columns:
 - **`Bonf`**: Bonferroni correction
 - **`Holm`**: Holm correction
 
-## Testing
+## Validation
 
-The package includes validation tests that compare R and Stata implementations:
+The package includes a validation function to compare the R implementation against the original Stata `mhtexp2` command:
 
-### Validation Script
+```r
+# Basic validation with default settings
+result <- validate_mhtexp2()
 
-The package includes a validation function to compare the R implementation against the original Stata mhtexp2
-  command:
+# The function will:
+# - Auto-detect your Stata installation
+# - Generate 1000 test observations with 2 outcomes, 2 subgroups, 3 treatments
+# - Run 5000 bootstrap replications for precise p-value estimation
+# - Compare R vs Stata results across all correction methods
 
-  # Basic validation with default settings
-  result <- validate_mhtexp2()
+# View the comparison table
+View(result$comparison)
 
-  # The function will:
-  # - Auto-detect your Stata installation
-  # - Generate 1000 test observations with 2 outcomes, 2 subgroups, 3 treatments
-  # - Run 5000 bootstrap replications for precise p-value estimation
-  # - Compare R vs Stata results across all correction methods
+# Customized validation
+result <- validate_mhtexp2(
+  n_obs = 2000,                    # More observations
+  bootstrap = 10000,               # More bootstrap replications  
+  combo = "treatmentcontrol",      # Different comparison type
+  seed = 42,                       # Reproducible results
+  stata_path = "/custom/path/to/stata",  # Manual Stata path if auto-detection fails
+  verbose = TRUE                   # Show detailed output
+)
 
-  # View the comparison table
-  View(result$comparison)
+# Use your own data
+result <- validate_mhtexp2(
+  data_source = "path/to/your/data.csv",  # Must have columns: y1, y2, treat, x1, x2, subgroup
+  bootstrap = 5000,
+  stata_path = "/Applications/Stata/StataMP.app/Contents/MacOS/stata-mp"  # Specify Stata location
+)
 
-  # Customized validation
-  result <- validate_mhtexp2(
-    n_obs = 2000,                    # More observations
-    bootstrap = 10000,               # More bootstrap replications  
-    combo = "treatmentcontrol",      # Different comparison type
-    seed = 42,                       # Reproducible results
-    stata_path = "/custom/path/to/stata",  # Manual Stata path if auto-detection fails
-    verbose = TRUE                   # Show detailed output
-  )
-
-  # Use your own data
-  result <- validate_mhtexp2(
-    data_source = "path/to/your/data.csv",  # Must have columns: y1, y2, treat, x1, x2, subgroup
-    bootstrap = 5000,
-    stata_path = "/Applications/Stata/StataMP.app/Contents/MacOS/stata-mp"  # Specify Stata location
-  )
-
-  # Check what Stata installation was found
-  find_stata()  # Returns path to detected Stata executable
-
-  Requirements:
-  - Stata installation (any recent version)
-  - Data must include columns: y1, y2, treat, x1, x2, subgroup
-
-  Note: If Stata auto-detection fails, manually specify the path with stata_path = "/path/to/your/stata".
+# Check what Stata installation was found
+find_stata()  # Returns path to detected Stata executable
 ```
+
+**Requirements:**
+- Stata installation (any recent version)
+- Data must include columns: `y1`, `y2`, `treat`, `x1`, `x2`, `subgroup`
+
+**Note:** If Stata auto-detection fails, manually specify the path with `stata_path = "/path/to/your/stata"`.
+
+The validation compares coefficients and all p-value correction methods (Remark 3.2, Theorem 3.1, Remark 3.8) between R and Stata implementations.
 
 ### Additional Test Files
 
