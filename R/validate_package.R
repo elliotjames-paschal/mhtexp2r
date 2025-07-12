@@ -4,12 +4,11 @@
 #' This script runs both R and Stata implementations of mhtexp2 and compares results.
 #' Supports both generated test data and user-provided datasets.
 
-# Load required packages
-library(devtools)
-load_all()  # Load the mhtexp2r package
+# Required packages loaded via DESCRIPTION
 
 #' Main validation function
 #' 
+#' @export
 #' @param data_source "generate" to create test data, or path to CSV file
 #' @param n_obs Number of observations (if generating data)
 #' @param combo Comparison type: "pairwise" or "treatmentcontrol" 
@@ -245,53 +244,7 @@ compare_results <- function(r_output, stata_output, verbose = TRUE) {
   return(comparison)
 }
 
-# Command line interface
-if (!interactive()) {
-  args <- commandArgs(trailingOnly = TRUE)
-  
-  # Default parameters
-  params <- list(
-    data_source = "generate",
-    n_obs = 1000,
-    combo = "pairwise",
-    bootstrap = 1000,
-    studentized = TRUE,
-    transitivity_check = TRUE,
-    seed = 42,
-    stata_path = "/Applications/StataNow/StataMP.app/Contents/MacOS/stata-mp"
-  )
-  
-  # Parse command line arguments
-  if (length(args) > 0) {
-    for (arg in args) {
-      if (grepl("=", arg)) {
-        parts <- strsplit(arg, "=")[[1]]
-        key <- parts[1]
-        value <- parts[2]
-        
-        # Convert to appropriate type
-        if (key %in% c("n_obs", "bootstrap", "seed")) {
-          params[[key]] <- as.numeric(value)
-        } else if (key %in% c("studentized", "transitivity_check")) {
-          params[[key]] <- as.logical(value)
-        } else {
-          params[[key]] <- value
-        }
-      }
-    }
-  }
-  
-  # Run validation
-  cat("Running validation with parameters:\n")
-  str(params)
-  cat("\n")
-  
-  result <- do.call(validate_mhtexp2, params)
-  
-  # Print simple message
-  cat("\nValidation complete. Use View(result$comparison) to see results.\n")
-}
-
 # Example usage:
-# Rscript validate_package.R data_source=generate n_obs=500 bootstrap=500
-# Rscript validate_package.R data_source=mydata.csv combo=treatmentcontrol
+# validate_mhtexp2()
+# validate_mhtexp2(n_obs=500, bootstrap=500)
+# validate_mhtexp2(data_source="mydata.csv", combo="treatmentcontrol")
