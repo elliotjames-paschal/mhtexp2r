@@ -18,7 +18,7 @@ You can install the package directly from GitHub:
 install.packages("devtools")
 
 # Install mhtexp2r from GitHub
-devtools::install_github("yourusername/mhtexp2r")
+devtools::install_github("elliotjames-paschal/mhtexp2r")
 ```
 
 ## Usage
